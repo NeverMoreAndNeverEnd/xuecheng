@@ -1,7 +1,10 @@
 package com.xuecheng.api.cms;
 
+import com.xuecheng.framework.domain.cms.CmsPage;
 import com.xuecheng.framework.domain.cms.request.QueryPageRequest;
+import com.xuecheng.framework.domain.cms.response.CmsPageResult;
 import com.xuecheng.framework.model.response.QueryResponseResult;
+import com.xuecheng.framework.model.response.ResponseResult;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -17,4 +20,20 @@ public interface CmsPageControllerApi {
             @ApiImplicitParam(name = "size", value = "每页记录数", required = true, paramType = "path", dataType = "int")
     })
     public QueryResponseResult findList(int page, int size, QueryPageRequest queryPageRequest);
+
+    //新增页面
+    @ApiOperation("新增页面")
+    public CmsPageResult add(CmsPage cmsPage);
+
+    //根据id查询
+    @ApiOperation("根据id查询")
+    public CmsPage findById(String id);
+
+    //修改
+    @ApiOperation("修改")
+    public CmsPageResult edit(String id, CmsPage cmsPage);
+
+    //删除
+    @ApiOperation("删除")
+    public ResponseResult delete(String id);
 }
