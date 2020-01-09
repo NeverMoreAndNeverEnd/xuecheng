@@ -5,8 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @SpringBootTest
@@ -14,6 +17,9 @@ public class CmsPageRepositoryTest {
 
     @Autowired
     private CmsPageRepository cmsPageRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Test
     public void testFindAll() {
@@ -58,5 +64,11 @@ public class CmsPageRepositoryTest {
         Page<CmsPage> all = cmsPageRepository.findAll(example, pageable);
         System.out.println(all.getTotalElements());
         System.out.println(all.getContent());
+    }
+
+    @Test
+    public void testRestTemplate() {
+        ResponseEntity<Map> forEntity = restTemplate.getForEntity("http://localhost:31001/cms/config/getmodel/5a795d82dd573c3574ee3360", Map.class);
+        System.out.println(forEntity);
     }
 }
