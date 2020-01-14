@@ -1,13 +1,19 @@
 package com.xuecheng.manage.cms.dao;
 
 import com.xuecheng.framework.domain.cms.CmsPage;
+import com.xuecheng.manage.cms.service.PageService;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.*;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +26,12 @@ public class CmsPageRepositoryTest {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private GridFsTemplate gridFsTemplate;
+
+    @Autowired
+    private PageService pageService;
 
     @Test
     public void testFindAll() {
@@ -68,7 +80,23 @@ public class CmsPageRepositoryTest {
 
     @Test
     public void testRestTemplate() {
-        ResponseEntity<Map> forEntity = restTemplate.getForEntity("http://localhost:31001/cms/config/getmodel/5a795d82dd573c3574ee3360", Map.class);
+        ResponseEntity<Map> forEntity = restTemplate.getForEntity("http://localhost:31001/cms/config/getmodel/5a791725dd573c3574ee333f", Map.class);
         System.out.println(forEntity);
     }
+
+    @Test
+    public void testGrids() throws FileNotFoundException {
+        File file = new File("E:\\BaiduNetdiskDownload\\学成在线\\4_页面静态化\\代码\\index_banner.ftl");
+        FileInputStream fileInputStream = new FileInputStream(file);
+        ObjectId id = gridFsTemplate.store(fileInputStream, "轮播图测试文件01");
+        System.out.println(id);
+    }
+
+    @Test
+    public void testGetPageHtml(){
+        String pageHtml = pageService.getPageHtml("5e1d803044bc6e024f4321dd");
+        System.out.println(pageHtml);
+    }
+
+
 }

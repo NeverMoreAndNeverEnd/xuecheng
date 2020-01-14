@@ -23,4 +23,7 @@ public interface PageService {
     //删除
     ResponseResult delete(String id);
 
+    //页面静态化
+    String getPageHtml(String pageId);
+
 }
