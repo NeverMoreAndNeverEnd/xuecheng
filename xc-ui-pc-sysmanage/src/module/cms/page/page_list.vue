@@ -27,19 +27,17 @@
       style="width: 100%">
       <el-table-column type="index" width="60">
       </el-table-column>
-      <el-table-column prop="pageName" label="页面名称" width="120">
+      <el-table-column prop="pageName" label="页面名称" width="100">
       </el-table-column>
       <el-table-column prop="pageAliase" label="别名" width="120">
       </el-table-column>
-      <el-table-column prop="pageType" label="页面类型" width="150">
+      <el-table-column prop="pageType" label="页面类型" width="100">
       </el-table-column>
       <el-table-column prop="pageWebPath" label="访问路径" width="250">
       </el-table-column>
       <el-table-column prop="pagePhysicalPath" label="物理路径" width="250">
       </el-table-column>
-      <el-table-column prop="pageCreateTime" label="创建时间" width="180" >
-      </el-table-column>
-      <el-table-column label="操作" width="80">
+      <el-table-column label="操作" width="180">
         <template slot-scope="page">
           <el-button
             size="small"type="text"
@@ -48,6 +46,10 @@
           <el-button
             size="small"type="text"
             @click="del(page.row.pageId)">删除
+          </el-button>
+          <el-button
+            size="small"type="text"
+            @click="preview(page.row.pageId)">页面预览
           </el-button>
         </template>
 
@@ -120,6 +122,9 @@
             }
           })
         })
+      },
+      preview:function (pageId) {
+        window.open("http://www.xuecheng.com/cms/preview/"+pageId)
 
       }
     },

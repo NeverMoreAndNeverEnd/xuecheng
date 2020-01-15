@@ -35,6 +35,9 @@
     <el-form-item label="物理路径" prop="pagePhysicalPath">
       <el-input v-model="pageForm.pagePhysicalPath" auto-complete="off" ></el-input>
     </el-form-item>
+    <el-form-item label="数据Url" prop="dataUrl">
+      <el-input v-model="pageForm.dataUrl" auto-complete="off" ></el-input>
+    </el-form-item>
 
     <el-form-item label="类型">
       <el-radio-group v-model="pageForm.pageType">
@@ -67,6 +70,7 @@
           pageName: '',
           pageAliase: '',
           pageWebPath: '',
+          dataUrl:'',
           pageParameter:'',
           pagePhysicalPath:'',
           pageType:'',
@@ -149,7 +153,7 @@
           templateName:'首页'
         },
         {
-          templateId:'5a962bf8b00ffc514038fafa',
+          templateId:'5e1d526a04fc4c5fc9e656d7',
           templateName:'轮播图'
         }
       ]
