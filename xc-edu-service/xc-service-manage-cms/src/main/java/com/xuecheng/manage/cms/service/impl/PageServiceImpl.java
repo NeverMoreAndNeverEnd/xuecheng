@@ -1,5 +1,6 @@
 package com.xuecheng.manage.cms.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.model.GridFSFile;
@@ -13,6 +14,7 @@ import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
+import com.xuecheng.manage.cms.config.RabbitMQConfig;
 import com.xuecheng.manage.cms.dao.CmsPageRepository;
 import com.xuecheng.manage.cms.dao.CmsTemplateRepository;
 import com.xuecheng.manage.cms.service.PageService;
@@ -21,6 +23,8 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.bson.types.ObjectId;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,6 +37,8 @@ import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -49,14 +55,17 @@ public class PageServiceImpl implements PageService {
 
     private GridFSBucket gridFSBucket;
 
+    private RabbitTemplate rabbitTemplate;
+
     @Autowired
     public PageServiceImpl(CmsPageRepository cmsPageRepository, RestTemplate restTemplate, CmsTemplateRepository cmsTemplateRepository,
-                           GridFsTemplate gridFsTemplate, GridFSBucket gridFSBucket) {
+                           GridFsTemplate gridFsTemplate, GridFSBucket gridFSBucket, RabbitTemplate rabbitTemplate) {
         this.cmsPageRepository = cmsPageRepository;
         this.restTemplate = restTemplate;
         this.cmsTemplateRepository = cmsTemplateRepository;
         this.gridFsTemplate = gridFsTemplate;
         this.gridFSBucket = gridFSBucket;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
@@ -229,6 +238,56 @@ public class PageServiceImpl implements PageService {
         }
         ResponseEntity<Map> forEntity = restTemplate.getForEntity(dataUrl, Map.class);
         return forEntity.getBody();
+    }
+
+    @Override
+    public ResponseResult postPage(String pageId) {
+        //执行页面静态化
+        String pageHtml = this.getPageHtml(pageId);
+        //将页面静态化文件存储到gridFs
+        CmsPage cmsPage = this.saveHtml(pageId, pageHtml);
+        //向mq发送消息
+        this.sendPostPage(pageId);
+        return new ResponseResult(CommonCode.SUCCESS);
+    }
+
+
+    //保存html到gridFs
+    private CmsPage saveHtml(String pageId, String htmlContent) {
+        CmsPage cmsPage = this.getById(pageId);
+        if (cmsPage == null) {
+            ExceptionCast.cast(CmsCode.CMS_PAGE_NOTEXISTS);
+        }
+        ObjectId objectId = null;
+        try {
+            InputStream inputStream = IOUtils.toInputStream(htmlContent, "utf-8");
+            //将html文件内容保存到gridFs
+            objectId = gridFsTemplate.store(inputStream, cmsPage.getPageName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //将html文件id更新到cmsPage中
+        cmsPage.setHtmlFileId(objectId.toString());
+        cmsPageRepository.save(cmsPage);
+        return cmsPage;
+    }
+
+    //向mq发送消息
+    private void sendPostPage(String pageId) {
+        CmsPage cmsPage = this.getById(pageId);
+        if (cmsPage == null) {
+            ExceptionCast.cast(CmsCode.CMS_PAGE_NOTEXISTS);
+        }
+        //创建消息对象
+        HashMap<String, String> msg = new HashMap<>();
+        msg.put("pageId", pageId);
+        //转成json串
+        String js = JSON.toJSONString(msg);
+        //站点id
+        String siteId = cmsPage.getSiteId();
+        //发送给mq
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EX_ROUTING_CMS_POSTPAGE, siteId, js);
+
     }
 
 

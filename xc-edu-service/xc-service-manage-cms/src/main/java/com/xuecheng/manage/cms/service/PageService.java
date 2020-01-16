@@ -26,4 +26,7 @@ public interface PageService {
     //页面静态化
     String getPageHtml(String pageId);
 
+    //页面发布
+    ResponseResult postPage(String pageId);
+
 }

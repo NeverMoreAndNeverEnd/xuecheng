@@ -23,7 +23,7 @@ public class ConsumerPostPage {
         //解析消息
         Map map = JSON.parseObject(msg, Map.class);
         //得到消息中页面id
-        String id = (String) map.get("id");
+        String id = (String) map.get("pageId");
         //调用service将页面从gridFs中下载到服务器
         pageService.savePageToServerPath(id);
 

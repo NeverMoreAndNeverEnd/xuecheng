@@ -37,7 +37,7 @@
       </el-table-column>
       <el-table-column prop="pagePhysicalPath" label="物理路径" width="250">
       </el-table-column>
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="220">
         <template slot-scope="page">
           <el-button
             size="small"type="text"
@@ -52,7 +52,14 @@
             @click="preview(page.row.pageId)">页面预览
           </el-button>
         </template>
-
+      </el-table-column>
+      <el-table-column label="发布" width="120">
+        <template slot-scope="page">
+        <el-button
+          size="small"type="primary"
+          @click="postPage(page.row.pageId)">页面发布
+        </el-button>
+          </template>
       </el-table-column>
     </el-table>
     <el-pagination
@@ -126,6 +133,20 @@
       preview:function (pageId) {
         window.open("http://www.xuecheng.com/cms/preview/"+pageId)
 
+      },
+      postPage:function (pageId) {
+        this.$confirm('确认发布该页面吗?','提示',{
+        }).then(()=>{
+          cmsApi.page_postPage(pageId).then((res)=>{
+            if (res.success){
+              this.$message.success('发布成功,请稍后查看结果!')
+            }else {
+              this.$message.error('发布失败!')
+            }
+          })
+        }).catch(()=>{
+          
+        })
       }
     },
     created(){
