@@ -1,4 +1,4 @@
-package com.xuecheng.manage_course.dao;
+package com.xuecheng.manage.course.dao;
 
 import com.xuecheng.framework.domain.course.CourseBase;
 import org.junit.Test;
@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.sound.midi.Soundbank;
 import java.util.Optional;
 
 /**
