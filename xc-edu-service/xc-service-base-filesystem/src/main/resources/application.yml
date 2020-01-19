@@ -28,9 +28,9 @@ eureka:
 aliyun:
   oss:
     file:
-      endpoint: oss-cn-shanghai.aliyuncs.com
-      keyid: LTAIzm0wduyxbxxq
-      keysecret: tYiGJDT7feGekmVwa2nTTqLya1I7tN
-      bucketname: never-edu-test
-      filehost: avatar
+      endpoint: 123
+      keyid: 456
+      keysecret: 789
+      bucketname: 11
+      filehost: 22
 
