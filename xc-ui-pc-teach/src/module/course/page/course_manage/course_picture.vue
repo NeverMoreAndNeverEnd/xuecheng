@@ -48,7 +48,7 @@
         return new Promise((resolve,rejct)=>{
           courseApi.deleteCoursePic(this.courseid).then(res=>{
             if(res.success){
-
+              this.$message.success("删除图片成功")
                 //成功
               resolve()
             }else{
@@ -71,12 +71,14 @@
           let fileId = response.fileSystem.fileId;
           courseApi.addCoursePic(this.courseid,fileId).then(res=>{
               if(res.success){
-                  this.$message.success("上传图片")
+                  this.$message.success("上传图片成功")
               }else{
-                this.$message.error(res.message)
+                this.handleError()
               }
 
           })
+        }else {
+          this.handleError()
         }
 
       },
@@ -110,7 +112,7 @@
       //查询课程
       courseApi.findCoursePicList(this.courseid).then(res=>{
           if(res && res.pic){
-              let imgUrl = this.imgUrl+res.pic;
+              let imgUrl = res.pic;
               //将图片地址设置到
             this.fileList.push({name:'pic',url:imgUrl,fileId:res.pic})
           }

@@ -1,0 +1,16 @@
+server:
+  port: 50101
+spring:
+  application:
+    name: xc-govern-center
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false
+    service-url:
+      defaultZone: http://127.0.0.1:50101/eureka/
+  instance:
+    prefer-ip-address: true
+  server:
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 60000 #服务注册表清理间隔
