@@ -11,6 +11,26 @@ export const findCourseList = (page,size,params) => {
   return http.requestQuickGet(apiUrl+"/course/coursebase/list/"+page+"/"+size+"?"+queries)
 }
 
+//根据id查询课程基本信息
+export const getCoursebaseById = (courseid) =>{
+  return http.requestQuickGet(apiUrl+"/course/coursebase/get/"+courseid)
+}
+
+//更新课程基本信息
+export const updateCoursebase = (id,course) =>{
+  return http.requestPut(apiUrl+"/course/coursebase/update/"+id,course)
+}
+
+//根据id查询课程营销信息
+export const getCourseMarketById = (courseid) =>{
+  return http.requestQuickGet(apiUrl+"/course/courseMarket/get/"+courseid)
+}
+
+//更新课程营销信息
+export const updateCourseMarket = (id,course) =>{
+  return http.requestPut(apiUrl+"/course/courseMarket/update/"+id,course)
+}
+
 //查询课程分类
 export const category_findlist= () => {
   return http.requestQuickGet(apiUrl+'/category/list')

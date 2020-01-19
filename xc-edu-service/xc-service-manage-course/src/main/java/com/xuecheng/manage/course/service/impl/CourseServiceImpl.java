@@ -3,23 +3,24 @@ package com.xuecheng.manage.course.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xuecheng.framework.domain.course.CourseBase;
+import com.xuecheng.framework.domain.course.CourseMarket;
 import com.xuecheng.framework.domain.course.Teachplan;
 import com.xuecheng.framework.domain.course.ext.CourseInfo;
 import com.xuecheng.framework.domain.course.ext.TeachplanNode;
 import com.xuecheng.framework.domain.course.request.CourseListRequest;
+import com.xuecheng.framework.domain.course.response.AddCourseResult;
 import com.xuecheng.framework.exception.ExceptionCast;
 import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
-import com.xuecheng.manage.course.dao.CourseBaseRepository;
-import com.xuecheng.manage.course.dao.CourseMapper;
-import com.xuecheng.manage.course.dao.TeachPlanRepository;
-import com.xuecheng.manage.course.dao.TeachplanMapper;
+import com.xuecheng.manage.course.dao.*;
 import com.xuecheng.manage.course.service.CourseService;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,12 +36,15 @@ public class CourseServiceImpl implements CourseService {
 
     private CourseMapper courseMapper;
 
+    private CourseMarketRepository courseMarketRepository;
+
     @Autowired
-    public CourseServiceImpl(TeachplanMapper teachplanMapper, CourseBaseRepository courseBaseRepository, TeachPlanRepository teachPlanRepository, CourseMapper courseMapper) {
+    public CourseServiceImpl(TeachplanMapper teachplanMapper, CourseBaseRepository courseBaseRepository, TeachPlanRepository teachPlanRepository, CourseMapper courseMapper, CourseMarketRepository courseMarketRepository) {
         this.teachplanMapper = teachplanMapper;
         this.courseBaseRepository = courseBaseRepository;
         this.teachPlanRepository = teachPlanRepository;
         this.courseMapper = courseMapper;
+        this.courseMarketRepository = courseMarketRepository;
     }
 
     @Override
@@ -49,6 +53,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional
     public ResponseResult addTeachPlan(Teachplan teachplan) {
         if (teachplan == null || StringUtils.isEmpty(teachplan.getCourseid()) || StringUtils.isEmpty(teachplan.getPname())) {
             ExceptionCast.cast(CommonCode.INVALID_PARAM);
@@ -117,5 +122,78 @@ public class CourseServiceImpl implements CourseService {
         queryResult.setList(records);
         queryResult.setTotal(total);
         return new QueryResponseResult(CommonCode.SUCCESS, queryResult);
+    }
+
+    @Override
+    @Transactional
+    public AddCourseResult addCourseBase(CourseBase courseBase) {
+        if (courseBase == null) {
+            ExceptionCast.cast(CommonCode.INVALID_PARAM);
+        }
+        courseBase.setStatus("202001");
+        courseBaseRepository.save(courseBase);
+        return new AddCourseResult(CommonCode.SUCCESS, courseBase.getId());
+    }
+
+    @Override
+    public CourseBase getCourseBaseById(String courseId) {
+        Optional<CourseBase> optional = courseBaseRepository.findById(courseId);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public ResponseResult updateCourseBase(String id, CourseBase courseBase) {
+        CourseBase one = this.getCourseBaseById(id);
+        if (one == null) {
+            ExceptionCast.cast(CommonCode.INVALID_PARAM);
+        }
+        one.setName(courseBase.getName());
+        one.setMt(courseBase.getMt());
+        one.setSt(courseBase.getSt());
+        one.setGrade(courseBase.getGrade());
+        one.setStudymodel(courseBase.getStudymodel());
+        one.setUsers(courseBase.getUsers());
+        one.setDescription(courseBase.getDescription());
+        CourseBase save = courseBaseRepository.save(one);
+        if (save == null) {
+            return new ResponseResult(CommonCode.FAIL);
+        }
+        return new ResponseResult(CommonCode.SUCCESS);
+    }
+
+    @Override
+    public CourseMarket getCourseMarketById(String courseId) {
+        Optional<CourseMarket> optional = courseMarketRepository.findById(courseId);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public ResponseResult updateCourseMarket(String id, CourseMarket courseMarket) {
+        CourseMarket one = this.getCourseMarketById(id);
+        if (one != null) {
+            one.setCharge(courseMarket.getCharge());
+            one.setStartTime(courseMarket.getStartTime());
+            one.setEndTime(courseMarket.getEndTime());
+            one.setPrice(courseMarket.getPrice());
+            one.setQq(courseMarket.getQq());
+            one.setValid(courseMarket.getValid());
+        } else {
+            one = new CourseMarket();
+            BeanUtils.copyProperties(courseMarket, one);
+            one.setId(id);
+        }
+        CourseMarket save = courseMarketRepository.save(one);
+        if (save == null) {
+            return new ResponseResult(CommonCode.FAIL);
+        }
+        return new ResponseResult(CommonCode.SUCCESS);
     }
 }
