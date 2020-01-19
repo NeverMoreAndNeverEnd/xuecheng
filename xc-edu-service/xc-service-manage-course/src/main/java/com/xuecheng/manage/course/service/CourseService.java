@@ -2,6 +2,7 @@ package com.xuecheng.manage.course.service;
 
 import com.xuecheng.framework.domain.course.CourseBase;
 import com.xuecheng.framework.domain.course.CourseMarket;
+import com.xuecheng.framework.domain.course.CoursePic;
 import com.xuecheng.framework.domain.course.Teachplan;
 import com.xuecheng.framework.domain.course.ext.TeachplanNode;
 import com.xuecheng.framework.domain.course.request.CourseListRequest;
@@ -26,4 +27,10 @@ public interface CourseService {
     CourseMarket getCourseMarketById(String courseId);
 
     ResponseResult updateCourseMarket(String id, CourseMarket courseMarket);
+
+    ResponseResult saveCoursePic(String courseId,String pic);
+
+    CoursePic findCoursePicById(String courseId);
+
+    ResponseResult deleteCoursePicById(String courseId);
 }
