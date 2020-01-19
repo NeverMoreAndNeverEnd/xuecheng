@@ -1,12 +1,19 @@
 package com.xuecheng.manage.course.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xuecheng.framework.domain.course.CourseBase;
 import com.xuecheng.framework.domain.course.Teachplan;
+import com.xuecheng.framework.domain.course.ext.CourseInfo;
 import com.xuecheng.framework.domain.course.ext.TeachplanNode;
+import com.xuecheng.framework.domain.course.request.CourseListRequest;
 import com.xuecheng.framework.exception.ExceptionCast;
 import com.xuecheng.framework.model.response.CommonCode;
+import com.xuecheng.framework.model.response.QueryResponseResult;
+import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
 import com.xuecheng.manage.course.dao.CourseBaseRepository;
+import com.xuecheng.manage.course.dao.CourseMapper;
 import com.xuecheng.manage.course.dao.TeachPlanRepository;
 import com.xuecheng.manage.course.dao.TeachplanMapper;
 import com.xuecheng.manage.course.service.CourseService;
@@ -26,11 +33,14 @@ public class CourseServiceImpl implements CourseService {
 
     private TeachPlanRepository teachPlanRepository;
 
+    private CourseMapper courseMapper;
+
     @Autowired
-    public CourseServiceImpl(TeachplanMapper teachplanMapper, CourseBaseRepository courseBaseRepository, TeachPlanRepository teachPlanRepository) {
+    public CourseServiceImpl(TeachplanMapper teachplanMapper, CourseBaseRepository courseBaseRepository, TeachPlanRepository teachPlanRepository, CourseMapper courseMapper) {
         this.teachplanMapper = teachplanMapper;
         this.courseBaseRepository = courseBaseRepository;
         this.teachPlanRepository = teachPlanRepository;
+        this.courseMapper = courseMapper;
     }
 
     @Override
@@ -85,5 +95,27 @@ public class CourseServiceImpl implements CourseService {
             return teachplan.getId();
         }
         return teachPlans.get(0).getId();
+    }
+
+
+    @Override
+    public QueryResponseResult findCourseList(int page, int size, CourseListRequest courseListRequest) {
+        if (courseListRequest == null) {
+            courseListRequest = new CourseListRequest();
+        }
+        if (page <= 0) {
+            page = 0;
+        }
+        if (size <= 0) {
+            size = 20;
+        }
+        Page<CourseInfo> courseInfoPage = new Page<>(page, size);
+        IPage<CourseInfo> courseListPage = courseMapper.findCourseListPage(courseInfoPage, courseListRequest);
+        List<CourseInfo> records = courseListPage.getRecords();
+        long total = courseListPage.getTotal();
+        QueryResult<CourseInfo> queryResult = new QueryResult<>();
+        queryResult.setList(records);
+        queryResult.setTotal(total);
+        return new QueryResponseResult(CommonCode.SUCCESS, queryResult);
     }
 }

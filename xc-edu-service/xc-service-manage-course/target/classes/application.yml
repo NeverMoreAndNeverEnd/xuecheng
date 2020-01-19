@@ -21,3 +21,6 @@ eureka:
   client:
     fetch-registry: false
     register-with-eureka: false
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
