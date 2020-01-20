@@ -1,14 +1,12 @@
 package com.xuecheng.manage.course.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xuecheng.framework.domain.cms.CmsPage;
 import com.xuecheng.framework.domain.cms.response.CmsPageResult;
 import com.xuecheng.framework.domain.cms.response.CmsPostPageResult;
-import com.xuecheng.framework.domain.course.CourseBase;
-import com.xuecheng.framework.domain.course.CourseMarket;
-import com.xuecheng.framework.domain.course.CoursePic;
-import com.xuecheng.framework.domain.course.Teachplan;
+import com.xuecheng.framework.domain.course.*;
 import com.xuecheng.framework.domain.course.ext.CourseInfo;
 import com.xuecheng.framework.domain.course.ext.CourseView;
 import com.xuecheng.framework.domain.course.ext.TeachplanNode;
@@ -31,6 +29,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,11 +70,13 @@ public class CourseServiceImpl implements CourseService {
 
     private CmsPageClient cmsPageClient;
 
+    private CoursePubRepository coursePubRepository;
+
     @Autowired
     public CourseServiceImpl(TeachplanMapper teachplanMapper, CourseBaseRepository courseBaseRepository,
                              TeachPlanRepository teachPlanRepository, CourseMapper courseMapper,
                              CourseMarketRepository courseMarketRepository, CoursePicRepository coursePicRepository,
-                             CmsPageClient cmsPageClient) {
+                             CmsPageClient cmsPageClient, CoursePubRepository coursePubRepository) {
         this.teachplanMapper = teachplanMapper;
         this.courseBaseRepository = courseBaseRepository;
         this.teachPlanRepository = teachPlanRepository;
@@ -82,6 +84,7 @@ public class CourseServiceImpl implements CourseService {
         this.courseMarketRepository = courseMarketRepository;
         this.coursePicRepository = coursePicRepository;
         this.cmsPageClient = cmsPageClient;
+        this.coursePubRepository = coursePubRepository;
     }
 
     @Override
@@ -314,11 +317,55 @@ public class CourseServiceImpl implements CourseService {
         //更新课程状态
         this.saveCoursePubState(courseId);
         //课程索引
+        CoursePub coursePub = this.createCoursePub(courseId);
+        CoursePub coursePubNew = this.saveCoursePub(courseId, coursePub);
+        if (coursePubNew == null) {
+            ExceptionCast.cast(CourseCode.COURSE_PUBLISH_CREATE_INDEX_ERROR);
+        }
         //课程缓存
         //页面url
         String pageUrl = cmsPostPageResult.getPageUrl();
         return new CoursePublishResult(CommonCode.SUCCESS, pageUrl);
     }
+
+    @Override
+    public CoursePub saveCoursePub(String courseId, CoursePub coursePub) {
+        if (StringUtils.isEmpty(courseId)) {
+            ExceptionCast.cast(CourseCode.COURSE_PUBLISH_COURSEIDISNULL);
+        }
+        CoursePub coursePubNew = null;
+        Optional<CoursePub> optional = coursePubRepository.findById(courseId);
+        if (optional.isPresent()) {
+            coursePubNew = optional.get();
+        }
+        if (coursePubNew == null) {
+            coursePubNew = new CoursePub();
+        }
+        BeanUtils.copyProperties(coursePub, coursePubNew);
+        coursePubNew.setId(courseId);
+        coursePubNew.setTimestamp(new Date());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+        String date = simpleDateFormat.format(new Date());
+        coursePubNew.setPubTime(date);
+        coursePubRepository.save(coursePubNew);
+        return coursePubNew;
+    }
+
+    private CoursePub createCoursePub(String id) {
+        CoursePub coursePub = new CoursePub();
+        coursePub.setId(id);
+        Optional<CourseBase> optionalCourseBase = courseBaseRepository.findById(id);
+        optionalCourseBase.ifPresent(courseBase -> BeanUtils.copyProperties(coursePub, courseBase));
+        Optional<CoursePic> optionalCoursePic = coursePicRepository.findById(id);
+        optionalCoursePic.ifPresent(coursePic -> BeanUtils.copyProperties(coursePub, coursePic));
+        Optional<CourseMarket> optionalCourseMarket = courseMarketRepository.findById(id);
+        optionalCourseMarket.ifPresent(courseMarket -> BeanUtils.copyProperties(coursePub, courseMarket));
+        TeachplanNode teachplanNode = teachplanMapper.selectList(id);
+        String teachPlanString = JSON.toJSONString(teachplanNode);
+        coursePub.setTeachplan(teachPlanString);
+        return coursePub;
+    }
+
 
     private CourseBase saveCoursePubState(String courseId) {
         CourseBase courseBase = this.getCourseBaseById(courseId);
@@ -336,8 +383,6 @@ public class CourseServiceImpl implements CourseService {
         cmsPage.setPageWebPath(publish_pageWebPath);
         cmsPage.setPagePhysicalPath(publish_pagePhysicalPath);
         cmsPage.setDataUrl(publish_dataUrlPre + courseId);
-
-        CmsPostPageResult cmsPostPageResult = cmsPageClient.postPageQuick(cmsPage);
-        return cmsPostPageResult;
+        return cmsPageClient.postPageQuick(cmsPage);
     }
 }
