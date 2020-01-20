@@ -98,5 +98,12 @@ public class CmsPageRepositoryTest {
         System.out.println(pageHtml);
     }
 
+    @Test
+    public void testGrids02() throws FileNotFoundException {
+        File file = new File("E:\\workspaceforgithubdemo\\xuecheng\\static\\course.ftl");
+        FileInputStream fileInputStream = new FileInputStream(file);
+        ObjectId id = gridFsTemplate.store(fileInputStream, "课程详情模板文件","");
+        System.out.println(id);
+    }
 
 }

@@ -251,6 +251,16 @@ public class PageServiceImpl implements PageService {
         return new ResponseResult(CommonCode.SUCCESS);
     }
 
+    @Override
+    public CmsPageResult save(CmsPage cmsPage) {
+        CmsPage one = cmsPageRepository.findByPageNameAndSiteIdAndPageWebPath(cmsPage.getPageName(), cmsPage.getSiteId(), cmsPage.getPageWebPath());
+        if (one != null) {
+            return this.update(one.getPageId(), cmsPage);
+        } else {
+            return this.add(cmsPage);
+        }
+    }
+
 
     //保存html到gridFs
     private CmsPage saveHtml(String pageId, String htmlContent) {
