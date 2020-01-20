@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xuecheng.framework.domain.cms.CmsPage;
 import com.xuecheng.framework.domain.cms.response.CmsPageResult;
+import com.xuecheng.framework.domain.cms.response.CmsPostPageResult;
 import com.xuecheng.framework.domain.course.CourseBase;
 import com.xuecheng.framework.domain.course.CourseMarket;
 import com.xuecheng.framework.domain.course.CoursePic;
@@ -99,6 +100,7 @@ public class CourseServiceImpl implements CourseService {
         if (StringUtils.isEmpty(parentid)) {
             parentid = this.getTeachPlanRoot(courseid);
         }
+        assert parentid != null;
         Optional<Teachplan> optional = teachPlanRepository.findById(parentid);
         if (!optional.isPresent()) {
             ExceptionCast.cast(CommonCode.INVALID_PARAM);
@@ -195,20 +197,14 @@ public class CourseServiceImpl implements CourseService {
         one.setStudymodel(courseBase.getStudymodel());
         one.setUsers(courseBase.getUsers());
         one.setDescription(courseBase.getDescription());
-        CourseBase save = courseBaseRepository.save(one);
-        if (save == null) {
-            return new ResponseResult(CommonCode.FAIL);
-        }
+        courseBaseRepository.save(one);
         return new ResponseResult(CommonCode.SUCCESS);
     }
 
     @Override
     public CourseMarket getCourseMarketById(String courseId) {
         Optional<CourseMarket> optional = courseMarketRepository.findById(courseId);
-        if (optional.isPresent()) {
-            return optional.get();
-        }
-        return null;
+        return optional.orElse(null);
     }
 
     @Override
@@ -227,10 +223,7 @@ public class CourseServiceImpl implements CourseService {
             BeanUtils.copyProperties(courseMarket, one);
             one.setId(id);
         }
-        CourseMarket save = courseMarketRepository.save(one);
-        if (save == null) {
-            return new ResponseResult(CommonCode.FAIL);
-        }
+        courseMarketRepository.save(one);
         return new ResponseResult(CommonCode.SUCCESS);
     }
 
@@ -254,10 +247,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CoursePic findCoursePicById(String courseId) {
         Optional<CoursePic> optional = coursePicRepository.findById(courseId);
-        if (optional.isPresent()) {
-            return optional.get();
-        }
-        return null;
+        return optional.orElse(null);
     }
 
     @Override
@@ -274,18 +264,13 @@ public class CourseServiceImpl implements CourseService {
     public CourseView getCourseView(String courseId) {
         CourseView courseView = new CourseView();
         Optional<CourseBase> optionalCourseBase = courseBaseRepository.findById(courseId);
-        if (optionalCourseBase.isPresent()) {
-            courseView.setCourseBase(optionalCourseBase.get());
-        }
+        optionalCourseBase.ifPresent(courseView::setCourseBase);
+
         Optional<CourseMarket> optionalCourseMarket = courseMarketRepository.findById(courseId);
-        if (optionalCourseMarket.isPresent()) {
-            courseView.setCourseMarket(optionalCourseMarket.get());
-        }
+        optionalCourseMarket.ifPresent(courseView::setCourseMarket);
 
         Optional<CoursePic> optionalCoursePic = coursePicRepository.findById(courseId);
-        if (optionalCoursePic.isPresent()) {
-            courseView.setCoursePic(optionalCoursePic.get());
-        }
+        optionalCoursePic.ifPresent(courseView::setCoursePic);
 
         TeachplanNode teachplanNode = teachplanMapper.selectList(courseId);
         if (teachplanNode != null) {
@@ -315,5 +300,44 @@ public class CourseServiceImpl implements CourseService {
         String pageId = cmsPageResult.getCmsPage().getPageId();
         String pageUrl = publish_previewUrl + pageId;
         return new CoursePublishResult(CommonCode.SUCCESS, pageUrl);
+    }
+
+    @Override
+    @Transactional
+    public CoursePublishResult publish(String courseId) {
+        CourseBase one = this.getCourseBaseById(courseId);
+        //发布课程详情页面
+        CmsPostPageResult cmsPostPageResult = this.publishPage(courseId);
+        if (!cmsPostPageResult.isSuccess()) {
+            ExceptionCast.cast(CommonCode.FAIL);
+        }
+        //更新课程状态
+        this.saveCoursePubState(courseId);
+        //课程索引
+        //课程缓存
+        //页面url
+        String pageUrl = cmsPostPageResult.getPageUrl();
+        return new CoursePublishResult(CommonCode.SUCCESS, pageUrl);
+    }
+
+    private CourseBase saveCoursePubState(String courseId) {
+        CourseBase courseBase = this.getCourseBaseById(courseId);
+        courseBase.setStatus("202002");
+        return courseBaseRepository.save(courseBase);
+    }
+
+    private CmsPostPageResult publishPage(String courseId) {
+        CourseBase courseBase = this.getCourseBaseById(courseId);
+        CmsPage cmsPage = new CmsPage();
+        cmsPage.setSiteId(publish_sitId);
+        cmsPage.setTemplateId(publish_templateId);
+        cmsPage.setPageName(courseId + ".html");
+        cmsPage.setPageAliase(courseBase.getName());
+        cmsPage.setPageWebPath(publish_pageWebPath);
+        cmsPage.setPagePhysicalPath(publish_pagePhysicalPath);
+        cmsPage.setDataUrl(publish_dataUrlPre + courseId);
+
+        CmsPostPageResult cmsPostPageResult = cmsPageClient.postPageQuick(cmsPage);
+        return cmsPostPageResult;
     }
 }

@@ -5,10 +5,12 @@ import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.xuecheng.framework.domain.cms.CmsPage;
+import com.xuecheng.framework.domain.cms.CmsSite;
 import com.xuecheng.framework.domain.cms.CmsTemplate;
 import com.xuecheng.framework.domain.cms.request.QueryPageRequest;
 import com.xuecheng.framework.domain.cms.response.CmsCode;
 import com.xuecheng.framework.domain.cms.response.CmsPageResult;
+import com.xuecheng.framework.domain.cms.response.CmsPostPageResult;
 import com.xuecheng.framework.exception.ExceptionCast;
 import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
@@ -16,6 +18,7 @@ import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
 import com.xuecheng.manage.cms.config.RabbitMQConfig;
 import com.xuecheng.manage.cms.dao.CmsPageRepository;
+import com.xuecheng.manage.cms.dao.CmsSiteRepository;
 import com.xuecheng.manage.cms.dao.CmsTemplateRepository;
 import com.xuecheng.manage.cms.service.PageService;
 import freemarker.cache.StringTemplateLoader;
@@ -57,15 +60,17 @@ public class PageServiceImpl implements PageService {
 
     private RabbitTemplate rabbitTemplate;
 
+    private CmsSiteRepository cmsSiteRepository;
+
     @Autowired
-    public PageServiceImpl(CmsPageRepository cmsPageRepository, RestTemplate restTemplate, CmsTemplateRepository cmsTemplateRepository,
-                           GridFsTemplate gridFsTemplate, GridFSBucket gridFSBucket, RabbitTemplate rabbitTemplate) {
+    public PageServiceImpl(CmsPageRepository cmsPageRepository, RestTemplate restTemplate, CmsTemplateRepository cmsTemplateRepository, GridFsTemplate gridFsTemplate, GridFSBucket gridFSBucket, RabbitTemplate rabbitTemplate, CmsSiteRepository cmsSiteRepository) {
         this.cmsPageRepository = cmsPageRepository;
         this.restTemplate = restTemplate;
         this.cmsTemplateRepository = cmsTemplateRepository;
         this.gridFsTemplate = gridFsTemplate;
         this.gridFSBucket = gridFSBucket;
         this.rabbitTemplate = rabbitTemplate;
+        this.cmsSiteRepository = cmsSiteRepository;
     }
 
     @Override
@@ -259,6 +264,40 @@ public class PageServiceImpl implements PageService {
         } else {
             return this.add(cmsPage);
         }
+    }
+
+    @Override
+    public CmsPostPageResult postPageQuick(CmsPage cmsPage) {
+        CmsPageResult save = this.save(cmsPage);
+        if (!save.isSuccess()) {
+            return new CmsPostPageResult(CommonCode.FAIL, null);
+        }
+        CmsPage page = save.getCmsPage();
+        String pageId = page.getPageId();
+        ResponseResult responseResult = this.postPage(pageId);
+        if (!responseResult.isSuccess()) {
+            return new CmsPostPageResult(CommonCode.FAIL, null);
+        }
+
+        String siteId = page.getSiteId();
+        CmsSite cmsSite = this.findCmsSiteById(siteId);
+        if (cmsSite == null) {
+            ExceptionCast.cast(CmsCode.CMS_SITE_NOTEXISTS);
+        }
+        String siteDomain = cmsSite.getSiteDomain();
+        String siteWebPath = cmsSite.getSiteWebPath();
+        String pageWebPath = page.getPageWebPath();
+        String pageName = page.getPageName();
+        String pageUrl = siteDomain + siteWebPath + pageWebPath + pageName;
+        return new CmsPostPageResult(CommonCode.SUCCESS, pageUrl);
+    }
+
+    private CmsSite findCmsSiteById(String siteId) {
+        Optional<CmsSite> optional = cmsSiteRepository.findById(siteId);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+        return null;
     }
 
 

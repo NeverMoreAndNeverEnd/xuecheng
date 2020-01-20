@@ -3,6 +3,7 @@ package com.xuecheng.manage.cms.service;
 import com.xuecheng.framework.domain.cms.CmsPage;
 import com.xuecheng.framework.domain.cms.request.QueryPageRequest;
 import com.xuecheng.framework.domain.cms.response.CmsPageResult;
+import com.xuecheng.framework.domain.cms.response.CmsPostPageResult;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.ResponseResult;
 
@@ -31,5 +32,8 @@ public interface PageService {
 
     //保存页面
     CmsPageResult save(CmsPage cmsPage);
+
+    //一建发布页面
+    CmsPostPageResult postPageQuick(CmsPage cmsPage);
 
 }

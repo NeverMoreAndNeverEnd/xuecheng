@@ -40,4 +40,5 @@ public interface CourseService {
 
     CoursePublishResult preview(String courseId);
 
+    CoursePublishResult publish(String courseId);
 }
